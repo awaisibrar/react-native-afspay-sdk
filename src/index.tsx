@@ -3,11 +3,11 @@ import type {
   CreateTransactionParams,
   Config,
   ApplyPayParams,
+  ApplePayCallback,
 } from '../lib/typescript'
 import {
   getPaymentStatus
 } from './paymentStatus'
-import type { ApplePayCallback } from '../'
 import { HyperPaySDK, eventEmitter } from './utils';
 
 export function init(params: Config): Config {
