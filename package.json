@@ -42,13 +42,13 @@
     "apple-pay",
     "react-native-afspay"
   ],
-  "repository": "https://github.com/ameensom/react-native-afspay-sdk",
-  "author": "ameensom <amin4mail@yahoo.com> (https://github.com/ameensom)",
+  "repository": "https://github.com/awaisibrar/react-native-afspay-sdk",
+  "author": "awaisibrar (https://github.com/awaisibrar)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ameensom/react-native-afspay-sdk/issues"
+    "url": "https://github.com/awaisibrar/react-native-afspay-sdk/issues"
   },
-  "homepage": "https://github.com/ameensom/react-native-afspay-sdk#readme",
+  "homepage": "https://github.com/awaisibrar/react-native-afspay-sdk#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
