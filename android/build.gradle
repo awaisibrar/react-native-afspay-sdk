@@ -1,0 +1,85 @@
+buildscript {
+    if (project == rootProject) {
+        repositories {
+            google()
+            mavenCentral()
+              flatDir {
+                 dirs 'libs'
+              }
+            // jcenter()
+        }
+
+        dependencies {
+            classpath 'com.android.tools.build:gradle:3.5.3'
+        }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+android {
+    compileSdkVersion safeExtGet('AfsPay_compileSdkVersion', 31)
+    defaultConfig {
+        minSdkVersion safeExtGet('AfsPay_minSdkVersion', 21)
+        targetSdkVersion safeExtGet('AfsPay_targetSdkVersion', 29)
+        versionCode 1
+        versionName "1.0"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    lintOptions {
+        disable 'GradleCompatible'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+        url("$rootDir/../node_modules/react-native/android")
+    }
+    google()
+    mavenCentral()
+      flatDir {
+        dirs 'libs'
+    }
+    // jcenter()
+}
+
+dependencies {
+
+  if (project.gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }) {
+     implementation files('libs/ipworks3ds_sdk_9149_deploy.aar')
+  }
+  else {
+    implementation files('libs/ipworks3ds_sdk_9149.aar')
+  }
+  implementation files('libs/oppwa.mobile-6.21.0-release.aar')
+  implementation "androidx.appcompat:appcompat:1.4.2"
+  implementation "androidx.recyclerview:recyclerview:1.2.1"
+  implementation "androidx.browser:browser:1.4.0"
+  implementation "androidx.fragment:fragment-ktx:1.4.1"
+  implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+  implementation "androidx.webkit:webkit:1.4.0"
+  implementation "com.google.android.material:material:1.6.1"
+  implementation "com.google.code.gson:gson:2.8.9"
+  implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
+
+
+  //noinspection GradleDynamicVersion
+  implementation "com.facebook.react:react-native:+"  // From node_modules
+
+}
