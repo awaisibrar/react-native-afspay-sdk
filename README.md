@@ -150,3 +150,7 @@ See the [contributing guide](CONTRIBUTING.md) for development setup and workflow
 ## License
 
 MIT
+
+## Contributor
+
+Awais Ibrar
