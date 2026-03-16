@@ -24,6 +24,7 @@ import com.oppwa.mobile.connect.payment.CheckoutInfo;
 import com.oppwa.mobile.connect.payment.ImagesRequest;
 import com.oppwa.mobile.connect.payment.PaymentParams;
 import com.oppwa.mobile.connect.payment.card.CardPaymentParams;
+import com.oppwa.mobile.connect.payment.token.TokenPaymentParams;
 import com.oppwa.mobile.connect.provider.Connect;
 import com.oppwa.mobile.connect.provider.ITransactionListener;
 import com.oppwa.mobile.connect.provider.OppPaymentProvider;
@@ -86,7 +87,43 @@ public class HyperPayModule extends ReactContextBaseJavaModule implements ITrans
         promisePaymentTransaction = promise;
         this.emitListeners("onProgress", true);
         try {
-            PaymentParams paymentParams = new CardPaymentParams(
+            CardPaymentParams cardParams = new CardPaymentParams(
+                    params.getString("checkoutID"),
+                    params.getString("paymentBrand"),
+                    params.getString("cardNumber"),
+                    params.getString("holderName"),
+                    params.getString("expiryMonth"),
+                    params.getString("expiryYear"),
+                    params.getString("cvv"));
+
+            if (params.hasKey("tokenizationEnabled") && params.getBoolean("tokenizationEnabled")) {
+                cardParams.setTokenizationEnabled(true);
+            }
+            if (params.hasKey("shopperResultURL")) {
+                shopperResultURL = params.getString("shopperResultURL");
+            }
+            cardParams.setShopperResultUrl(shopperResultURL);
+
+            try {
+                OppPaymentProvider paymentProvider = buildProvider();
+                Transaction transaction = new Transaction(cardParams);
+                paymentProvider.submitTransaction(transaction, this);
+            } catch (PaymentException e) {
+                this.emitListeners("onProgress", false);
+                promisePaymentTransaction.reject(e);
+            }
+        } catch (PaymentException e) {
+            this.emitListeners("onProgress", false);
+            promisePaymentTransaction.reject(e);
+        }
+    }
+
+    @ReactMethod
+    public void registerCard(ReadableMap params, Promise promise) {
+        promisePaymentTransaction = promise;
+        this.emitListeners("onProgress", true);
+        try {
+            CardPaymentParams cardParams = new CardPaymentParams(
                     params.getString("checkoutID"),
                     params.getString("paymentBrand"),
                     params.getString("cardNumber"),
@@ -98,22 +135,44 @@ public class HyperPayModule extends ReactContextBaseJavaModule implements ITrans
             if (params.hasKey("shopperResultURL")) {
                 shopperResultURL = params.getString("shopperResultURL");
             }
-            paymentParams.setShopperResultUrl(shopperResultURL);
-            Transaction transaction = null;
+            cardParams.setShopperResultUrl(shopperResultURL);
 
             try {
-                OppPaymentProvider paymentProvider = new OppPaymentProvider(appContext, Connect.ProviderMode.TEST);
-                paymentProvider.setThreeDSWorkflowListener(new ThreeDSWorkflowListener() {
-                    @Override
-                    public Activity onThreeDSChallengeRequired() {
-                        return getCurrentActivity();
-                    }
-                });
+                OppPaymentProvider paymentProvider = buildProvider();
+                Transaction transaction = new Transaction(cardParams);
+                paymentProvider.registerTransaction(transaction, this);
+            } catch (PaymentException e) {
+                this.emitListeners("onProgress", false);
+                promisePaymentTransaction.reject(e);
+            }
+        } catch (PaymentException e) {
+            this.emitListeners("onProgress", false);
+            promisePaymentTransaction.reject(e);
+        }
+    }
 
-                if (mode.equals("LiveMode")) {
-                    paymentProvider.setProviderMode(Connect.ProviderMode.LIVE);
-                }
-                transaction = new Transaction(paymentParams);
+    @ReactMethod
+    public void payWithToken(ReadableMap params, Promise promise) {
+        promisePaymentTransaction = promise;
+        this.emitListeners("onProgress", true);
+        try {
+            String checkoutID = params.getString("checkoutID");
+            String tokenID = params.getString("tokenID");
+            String paymentBrand = params.getString("paymentBrand");
+
+            TokenPaymentParams tokenParams = new TokenPaymentParams(checkoutID, tokenID, paymentBrand);
+
+            if (params.hasKey("cvv") && params.getString("cvv") != null) {
+                tokenParams.setCvv(params.getString("cvv"));
+            }
+            if (params.hasKey("shopperResultURL")) {
+                shopperResultURL = params.getString("shopperResultURL");
+            }
+            tokenParams.setShopperResultUrl(shopperResultURL);
+
+            try {
+                OppPaymentProvider paymentProvider = buildProvider();
+                Transaction transaction = new Transaction(tokenParams);
                 paymentProvider.submitTransaction(transaction, this);
             } catch (PaymentException e) {
                 this.emitListeners("onProgress", false);
@@ -123,6 +182,19 @@ public class HyperPayModule extends ReactContextBaseJavaModule implements ITrans
             this.emitListeners("onProgress", false);
             promisePaymentTransaction.reject(e);
         }
+    }
+
+    private OppPaymentProvider buildProvider() {
+        OppPaymentProvider paymentProvider = new OppPaymentProvider(
+                appContext,
+                "LiveMode".equals(mode) ? Connect.ProviderMode.LIVE : Connect.ProviderMode.TEST);
+        paymentProvider.setThreeDSWorkflowListener(new ThreeDSWorkflowListener() {
+            @Override
+            public Activity onThreeDSChallengeRequired() {
+                return getCurrentActivity();
+            }
+        });
+        return paymentProvider;
     }
 
     private void emitListeners(String eventName, boolean isLoading) {
