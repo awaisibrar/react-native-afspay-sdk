@@ -125,7 +125,82 @@ const result = await AfsPay.createPaymentTransaction(
 // result: { status, checkoutId, redirectURL }
 ```
 
-### 5. Get payment status
+### 5. Tokenization
+
+Tokenization replaces sensitive card data with a reusable token so you can charge the shopper later without re-entering card details.
+
+#### 5a. Tokenize during payment (shopper-determined)
+
+Add `tokenizationEnabled: true` to a normal card payment. The server's payment status response will include a `registrationId` — store that token on your server.
+
+```js
+const result = await AfsPay.createPaymentTransaction(
+  {
+    paymentBrand: 'VISA',
+    holderName: 'John Doe',
+    cardNumber: '4111111111111111',
+    expiryYear: '2027',
+    expiryMonth: '12',
+    cvv: '123',
+    checkoutID: 'checkout-id-from-backend',
+    tokenizationEnabled: true, // <-- store card as token
+  },
+  (isLoading) => { /* show/hide loader */ }
+);
+// After payment, query your server with result.checkoutId
+// Server response includes registrationId — save it for future payments
+```
+
+#### 5b. Register card without payment (stand-alone)
+
+Saves the card as a token **without** charging it. Useful for a "saved cards" section.
+
+> **Server requirement:** Your backend must send `createRegistration=true` and omit `paymentType` when preparing the checkout.
+
+```js
+const result = await AfsPay.registerCard(
+  {
+    paymentBrand: 'VISA',
+    holderName: 'John Doe',
+    cardNumber: '4111111111111111',
+    expiryYear: '2027',
+    expiryMonth: '12',
+    cvv: '123',
+    checkoutID: 'registration-checkout-id-from-backend',
+  },
+  (isLoading) => { /* show/hide loader */ }
+);
+// result: { checkoutId }
+// Query your server with checkoutId to get the registrationId (token) — save it
+```
+
+#### 5c. Pay with a stored token (one-click payment)
+
+Use a `registrationId` from a previous payment or registration to charge without re-entering card details.
+
+> **Server requirement:** Your backend must include `registrations[0].id = <tokenID>` when preparing the checkout.
+
+```js
+const result = await AfsPay.payWithToken(
+  {
+    checkoutID: 'checkout-id-from-backend',
+    tokenID: '8a82944a580a782101581f3a0b4b5ab9', // registrationId from your server
+    paymentBrand: 'VISA',
+    cvv: '123', // optional — required by some acquirers
+  },
+  (isLoading) => { /* show/hide loader */ }
+);
+// result: { status: 'pending' | 'completed', checkoutId, redirectURL? }
+```
+
+| Option        | Type   | Required | Description                                           |
+|---------------|--------|----------|-------------------------------------------------------|
+| `checkoutID`  | string | Yes      | Checkout ID from your backend.                        |
+| `tokenID`     | string | Yes      | The `registrationId` (token) stored on your server.   |
+| `paymentBrand`| string | Yes      | Card brand (e.g. `'VISA'`, `'MASTERCARD'`).           |
+| `cvv`         | string | No       | Required by some acquirers for token payments.        |
+
+### 6. Get payment status
 
 After redirect or when you have a transaction resource path or status code:
 
@@ -135,7 +210,7 @@ const status = await AfsPay.getPaymentStatus('000.000.000');
 // status: { code, description, status: 'successfully' | 'rejected' | ... }
 ```
 
-### 6. Loading hook (optional)
+### 7. Loading hook (optional)
 
 ```js
 import AfsPay, { useTransactionLoading } from 'react-native-afspay-sdk';
@@ -148,14 +223,16 @@ function CheckoutScreen() {
 
 ## API summary
 
-| Method                     | Description                                  |
-|----------------------------|----------------------------------------------|
-| `AfsPay.init(config)`      | Set global config. Call once before payments. |
-| `AfsPay.applePay(params, onProgress?)` | Start Apple Pay flow (iOS).             |
-| `AfsPay.googlePay(params, onProgress?)` | Start Google Pay flow (Android only).  |
-| `AfsPay.createPaymentTransaction(params, onProgress?)` | Start card payment.              |
-| `AfsPay.getPaymentStatus(statusCode)`  | Get transaction status.                 |
-| `useTransactionLoading()`  | Hook that returns loading state.             |
+| Method                                                  | Description                                             |
+|---------------------------------------------------------|---------------------------------------------------------|
+| `AfsPay.init(config)`                                   | Set global config. Call once before payments.           |
+| `AfsPay.applePay(params, onProgress?)`                  | Start Apple Pay flow (iOS).                             |
+| `AfsPay.googlePay(params, onProgress?)`                 | Start Google Pay flow (Android only).                   |
+| `AfsPay.createPaymentTransaction(params, onProgress?)`  | Charge a card. Pass `tokenizationEnabled: true` to also store a token. |
+| `AfsPay.registerCard(params, onProgress?)`              | Store a card as a token without charging (stand-alone). |
+| `AfsPay.payWithToken(params, onProgress?)`              | One-click payment using a stored token.                 |
+| `AfsPay.getPaymentStatus(statusCode)`                   | Get transaction status from a result code.              |
+| `useTransactionLoading()`                               | Hook that returns loading state.                        |
 
 ## Troubleshooting
 

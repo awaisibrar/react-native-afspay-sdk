@@ -6,6 +6,10 @@ import type {
   ApplePayCallback,
   GooglePayParams,
   GooglePayCallback,
+  RegisterCardParams,
+  RegisterCardResponse,
+  TokenPaymentParams,
+  TokenPaymentResponse,
 } from '../lib/typescript'
 import {
   getPaymentStatus
@@ -56,11 +60,41 @@ export function googlePay(
   return HyperPaySDK.googlePay(params);
 }
 
+export function registerCard(
+  params: RegisterCardParams,
+  onProgress?: (isProgress: boolean) => void
+): Promise<RegisterCardResponse> {
+  if (onProgress) {
+    eventEmitter.removeAllListeners('onProgress');
+    const _event = eventEmitter.addListener('onProgress', (isLoading: boolean) => {
+      onProgress(isLoading);
+      if (!isLoading) _event.remove();
+    });
+  }
+  return HyperPaySDK.registerCard(params);
+}
+
+export function payWithToken(
+  params: TokenPaymentParams,
+  onProgress?: (isProgress: boolean) => void
+): Promise<TokenPaymentResponse> {
+  if (onProgress) {
+    eventEmitter.removeAllListeners('onProgress');
+    const _event = eventEmitter.addListener('onProgress', (isLoading: boolean) => {
+      onProgress(isLoading);
+      if (!isLoading) _event.remove();
+    });
+  }
+  return HyperPaySDK.payWithToken(params);
+}
+
 const Hyperpay = {
   init,
   applePay,
   googlePay,
   createPaymentTransaction,
+  registerCard,
+  payWithToken,
   getPaymentStatus,
 }
 export {
