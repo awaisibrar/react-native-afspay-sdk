@@ -57,6 +57,20 @@ export type ApplePayCallback = {
     /**  Request payment status for the synchronous transaction from your server using transactionPath.resourcePath or just checkout id.*/
     resourcePath?: string;
 }
+/** @platform Android */
+export type GooglePayParams = {
+    checkoutID: string;
+    amount?: string;
+    currencyCode?: string;
+    gatewayMerchantId?: string;
+    entityId?: string;
+}
+/** @platform Android */
+export type GooglePayCallback = {
+    resourcePath?: string;
+    transactionId?: string;
+    checkoutId?: string;
+}
 export default class HyperPay {
     /**
        * @param  {string} shopperResultURL
@@ -78,6 +92,8 @@ export default class HyperPay {
         resourcePath?: string}>```
        */
     static applePay(checkoutID: ApplyPayParams, onProgress?: (isProgress: boolean) => void): Promise<ApplePayCallback>;
+    /** Google Pay — Android only. Rejects on iOS. */
+    static googlePay(params: GooglePayParams, onProgress?: (isProgress: boolean) => void): Promise<GooglePayCallback>;
 
     /**
      * @param  {string} paymentBrand

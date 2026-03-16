@@ -4,6 +4,8 @@ import type {
   Config,
   ApplyPayParams,
   ApplePayCallback,
+  GooglePayParams,
+  GooglePayCallback,
 } from '../lib/typescript'
 import {
   getPaymentStatus
@@ -41,9 +43,23 @@ export function applePay(params: ApplyPayParams,
   return HyperPaySDK.applePay(params);
 }
 
+export function googlePay(
+  params: GooglePayParams,
+  onProgress?: (isProgress: boolean) => void
+): Promise<GooglePayCallback> {
+  if (onProgress) {
+    const _event = eventEmitter.addListener('onProgress', (isLoading: boolean) => {
+      onProgress(isLoading);
+      if (!isLoading) _event.remove();
+    });
+  }
+  return HyperPaySDK.googlePay(params);
+}
+
 const Hyperpay = {
   init,
   applePay,
+  googlePay,
   createPaymentTransaction,
   getPaymentStatus,
 }

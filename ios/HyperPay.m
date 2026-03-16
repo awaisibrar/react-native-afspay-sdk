@@ -143,6 +143,9 @@ RCT_EXPORT_METHOD(applePay:(NSDictionary*)params resolver:(RCTPromiseResolveBloc
 
 }
 
+RCT_EXPORT_METHOD(googlePay:(NSDictionary*)params resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  reject(@"GOOGLE_PAY_UNSUPPORTED", @"Google Pay is only supported on Android", nil);
+}
 
 @end
 

@@ -74,7 +74,36 @@ const result = await AfsPay.applePay(
 // Use redirectURL or resourcePath + checkout ID to confirm status on your server
 ```
 
-### 3. Card payment (create transaction)
+### 3. Google Pay (Android only)
+
+On iOS, `googlePay` rejects with an error. Use only on Android.
+
+```js
+const result = await AfsPay.googlePay(
+  {
+    checkoutID: 'your-checkout-id-from-backend',
+    amount: '100.00',
+    currencyCode: 'USD',
+    gatewayMerchantId: 'yourEntityId', // or entityId — from your HyperPay/OPPWA config
+  },
+  (isLoading) => {
+    // optional: show/hide loading UI
+  }
+);
+
+// result: { resourcePath?: string, transactionId?: string, checkoutId?: string }
+// Use resourcePath or checkoutId to confirm status on your server
+```
+
+| Option               | Type   | Required | Description                                      |
+|----------------------|--------|----------|--------------------------------------------------|
+| `checkoutID`         | string | Yes      | Checkout ID from your backend.                   |
+| `amount`             | string | No       | Total amount (e.g. `"100.00"`). Default: `"0"`. |
+| `currencyCode`       | string | No       | Currency code (e.g. `"USD"`). Default: `"USD"`. |
+| `gatewayMerchantId`  | string | No       | Entity ID / gateway merchant ID from HyperPay.   |
+| `entityId`           | string | No       | Alias for `gatewayMerchantId`.                   |
+
+### 4. Card payment (create transaction)
 
 ```js
 const result = await AfsPay.createPaymentTransaction(
@@ -96,7 +125,7 @@ const result = await AfsPay.createPaymentTransaction(
 // result: { status, checkoutId, redirectURL }
 ```
 
-### 4. Get payment status
+### 5. Get payment status
 
 After redirect or when you have a transaction resource path or status code:
 
@@ -106,7 +135,7 @@ const status = await AfsPay.getPaymentStatus('000.000.000');
 // status: { code, description, status: 'successfully' | 'rejected' | ... }
 ```
 
-### 5. Loading hook (optional)
+### 6. Loading hook (optional)
 
 ```js
 import AfsPay, { useTransactionLoading } from 'react-native-afspay-sdk';
@@ -122,7 +151,8 @@ function CheckoutScreen() {
 | Method                     | Description                                  |
 |----------------------------|----------------------------------------------|
 | `AfsPay.init(config)`      | Set global config. Call once before payments. |
-| `AfsPay.applePay(params, onProgress?)` | Start Apple Pay flow.                    |
+| `AfsPay.applePay(params, onProgress?)` | Start Apple Pay flow (iOS).             |
+| `AfsPay.googlePay(params, onProgress?)` | Start Google Pay flow (Android only).  |
 | `AfsPay.createPaymentTransaction(params, onProgress?)` | Start card payment.              |
 | `AfsPay.getPaymentStatus(statusCode)`  | Get transaction status.                 |
 | `useTransactionLoading()`  | Hook that returns loading state.             |
