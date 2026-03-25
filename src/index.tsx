@@ -6,6 +6,10 @@ import type {
   ApplePayCallback,
   GooglePayParams,
   GooglePayCallback,
+  RegisterCardParams,
+  RegisterCardResponse,
+  TokenPaymentParams,
+  TokenPaymentResponse,
 } from '../lib/typescript'
 import {
   getPaymentStatus
@@ -56,8 +60,6 @@ export function googlePay(
   return HyperPaySDK.googlePay(params);
 }
 
-<<<<<<< Updated upstream
-=======
 export function registerCard(
   params: RegisterCardParams,
   onProgress?: (isProgress: boolean) => void
@@ -90,7 +92,6 @@ export function checkThreeDS2Status(): Promise<{ wasTransactionKilled: boolean }
   return HyperPaySDK.checkThreeDS2Status();
 }
 
->>>>>>> Stashed changes
 const Hyperpay = {
   init,
   applePay,
@@ -98,6 +99,8 @@ const Hyperpay = {
   createPaymentTransaction,
   getPaymentStatus,
   checkThreeDS2Status,
+  registerCard,
+  payWithToken,
 }
 export {
   useTransactionLoading

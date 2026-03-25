@@ -71,6 +71,36 @@ export type GooglePayCallback = {
     transactionId?: string;
     checkoutId?: string;
 }
+
+export type RegisterCardParams = {
+    paymentBrand: CardAccountBrands;
+    holderName: string;
+    cardNumber: string;
+    expiryYear: string;
+    expiryMonth: string;
+    cvv: string;
+    checkoutID: string;
+    shopperResultURL?: string;
+}
+
+export type RegisterCardResponse = {
+    status: string;
+    checkoutId: string;
+    redirectURL?: string;
+}
+
+export type TokenPaymentParams = {
+    checkoutID: string;
+    tokenID: string;
+    paymentBrand: string;
+    shopperResultURL?: string;
+}
+
+export type TokenPaymentResponse = {
+    status: string;
+    checkoutId: string;
+    redirectURL?: string;
+}
 export default class HyperPay {
     /**
        * @param  {string} shopperResultURL
@@ -128,6 +158,10 @@ export default class HyperPay {
      * If wasTransactionKilled is true, request payment status from your server.
      */
     static checkThreeDS2Status(): Promise<{ wasTransactionKilled: boolean }>
+
+    static registerCard(params: RegisterCardParams, onProgress?: (isProgress: boolean) => void): Promise<RegisterCardResponse>;
+
+    static payWithToken(params: TokenPaymentParams, onProgress?: (isProgress: boolean) => void): Promise<TokenPaymentResponse>;
 
 }
 export type { PaymentStatus }
