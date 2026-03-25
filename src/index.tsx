@@ -56,12 +56,48 @@ export function googlePay(
   return HyperPaySDK.googlePay(params);
 }
 
+<<<<<<< Updated upstream
+=======
+export function registerCard(
+  params: RegisterCardParams,
+  onProgress?: (isProgress: boolean) => void
+): Promise<RegisterCardResponse> {
+  if (onProgress) {
+    eventEmitter.removeAllListeners('onProgress');
+    const _event = eventEmitter.addListener('onProgress', (isLoading: boolean) => {
+      onProgress(isLoading);
+      if (!isLoading) _event.remove();
+    });
+  }
+  return HyperPaySDK.registerCard(params);
+}
+
+export function payWithToken(
+  params: TokenPaymentParams,
+  onProgress?: (isProgress: boolean) => void
+): Promise<TokenPaymentResponse> {
+  if (onProgress) {
+    eventEmitter.removeAllListeners('onProgress');
+    const _event = eventEmitter.addListener('onProgress', (isLoading: boolean) => {
+      onProgress(isLoading);
+      if (!isLoading) _event.remove();
+    });
+  }
+  return HyperPaySDK.payWithToken(params);
+}
+
+export function checkThreeDS2Status(): Promise<{ wasTransactionKilled: boolean }> {
+  return HyperPaySDK.checkThreeDS2Status();
+}
+
+>>>>>>> Stashed changes
 const Hyperpay = {
   init,
   applePay,
   googlePay,
   createPaymentTransaction,
   getPaymentStatus,
+  checkThreeDS2Status,
 }
 export {
   useTransactionLoading

@@ -146,8 +146,40 @@ function CheckoutScreen() {
 }
 ```
 
+### 8. 3D Secure 2 (3DS2)
+
+3DS2 works **automatically** — no extra JS code is needed for the challenge flow. The SDK handles it natively inside `createPaymentTransaction`, `registerCard`, and `payWithToken`.
+
+**What happens under the hood:**
+
+- **iOS**: `HyperPay` conforms to `OPPThreeDSWorkflowListener`. When the issuer requires a challenge, the SDK calls `onThreeDSChallengeRequired` and presents the native challenge screen in the app's navigation controller. When it needs config, `onThreeDSConfigRequired` returns a default `OPPThreeDSConfig`.
+
+- **Android**: `buildProvider()` sets a `ThreeDSWorkflowListener` that returns the current `Activity` for the challenge screen and a default `ThreeDSConfig`.
+
+**Handle app killed during 3DS (Android only):**
+
+If the app goes to the background during a 3DS challenge, Android may kill it. On restart, call `checkThreeDS2Status` to detect this and request the payment status from your server.
+
+```js
+import { useEffect } from 'react';
+import AfsPay from 'react-native-afspay-sdk';
+
+// In your app entry / payment screen on mount:
+useEffect(() => {
+  AfsPay.checkThreeDS2Status().then(({ wasTransactionKilled }) => {
+    if (wasTransactionKilled) {
+      // The 3DS flow was interrupted — ask your server for the payment result
+      fetchPaymentStatusFromServer();
+    }
+  });
+}, []);
+```
+
+> **Note:** 3DS2 must first be enabled for the specific card brands in the HyperPay Administration Portal.
+
 ## API summary
 
+<<<<<<< Updated upstream
 | Method                     | Description                                  |
 |----------------------------|----------------------------------------------|
 | `AfsPay.init(config)`      | Set global config. Call once before payments. |
@@ -156,6 +188,19 @@ function CheckoutScreen() {
 | `AfsPay.createPaymentTransaction(params, onProgress?)` | Start card payment.              |
 | `AfsPay.getPaymentStatus(statusCode)`  | Get transaction status.                 |
 | `useTransactionLoading()`  | Hook that returns loading state.             |
+=======
+| Method                                                  | Description                                             |
+|---------------------------------------------------------|---------------------------------------------------------|
+| `AfsPay.init(config)`                                   | Set global config. Call once before payments.           |
+| `AfsPay.applePay(params, onProgress?)`                  | Start Apple Pay flow (iOS).                             |
+| `AfsPay.googlePay(params, onProgress?)`                 | Start Google Pay flow (Android only).                   |
+| `AfsPay.createPaymentTransaction(params, onProgress?)`  | Charge a card. Pass `tokenizationEnabled: true` to also store a token. |
+| `AfsPay.registerCard(params, onProgress?)`              | Store a card as a token without charging (stand-alone). |
+| `AfsPay.payWithToken(params, onProgress?)`              | One-click payment using a stored token.                 |
+| `AfsPay.getPaymentStatus(statusCode)`                   | Get transaction status from a result code.              |
+| `AfsPay.checkThreeDS2Status()`                          | Android only — check if 3DS was killed in background.   |
+| `useTransactionLoading()`                               | Hook that returns loading state.                        |
+>>>>>>> Stashed changes
 
 ## Troubleshooting
 

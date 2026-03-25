@@ -17,10 +17,10 @@ RCT_EXPORT_MODULE(HyperPay)
 
 -(instancetype)init
 {
-  
     self = [super init];
     if (self) {
         provider = [OPPPaymentProvider paymentProviderWithMode:OPPProviderModeTest];
+        provider.threeDSEventListener = self;
     }
     return self;
 }
@@ -48,6 +48,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(setup: (NSDictionary*)options) {
       provider = [OPPPaymentProvider paymentProviderWithMode:OPPProviderModeLive];
     else
       provider = [OPPPaymentProvider paymentProviderWithMode:OPPProviderModeTest];
+
+    provider.threeDSEventListener = self;
     return options;
 }
 
@@ -145,6 +147,32 @@ RCT_EXPORT_METHOD(applePay:(NSDictionary*)params resolver:(RCTPromiseResolveBloc
 
 RCT_EXPORT_METHOD(googlePay:(NSDictionary*)params resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   reject(@"GOOGLE_PAY_UNSUPPORTED", @"Google Pay is only supported on Android", nil);
+}
+
+#pragma mark - OPPThreeDSWorkflowListener
+
+- (void)onThreeDSChallengeRequiredWithCompletion:(void (^)(UINavigationController * _Nonnull))completion {
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    // Walk down to the topmost presented controller
+    while (rootVC.presentedViewController) {
+      rootVC = rootVC.presentedViewController;
+    }
+    UINavigationController *navController;
+    if ([rootVC isKindOfClass:[UINavigationController class]]) {
+      navController = (UINavigationController *)rootVC;
+    } else if (rootVC.navigationController) {
+      navController = rootVC.navigationController;
+    } else {
+      navController = [[UINavigationController alloc] initWithRootViewController:rootVC];
+    }
+    completion(navController);
+  });
+}
+
+- (void)onThreeDSConfigRequiredWithCompletion:(void (^)(OPPThreeDSConfig * _Nonnull))completion {
+  OPPThreeDSConfig *config = [[OPPThreeDSConfig alloc] init];
+  completion(config);
 }
 
 @end

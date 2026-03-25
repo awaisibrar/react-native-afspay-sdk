@@ -1,6 +1,6 @@
 {
   "name": "react-native-afspay-sdk-latest",
-  "version": "0.39.5",
+  "version": "0.39.9",
   "description": "hyperpay",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",

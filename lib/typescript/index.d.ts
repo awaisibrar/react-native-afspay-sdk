@@ -122,6 +122,13 @@ export default class HyperPay {
 
     static getPaymentStatus(status: string): PaymentStatus
 
+    /**
+     * Android only. Call on app restart to check if a 3DS transaction was
+     * interrupted while the app was destroyed in the background.
+     * If wasTransactionKilled is true, request payment status from your server.
+     */
+    static checkThreeDS2Status(): Promise<{ wasTransactionKilled: boolean }>
+
 }
 export type { PaymentStatus }
 
