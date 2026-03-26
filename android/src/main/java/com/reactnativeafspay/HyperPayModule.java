@@ -306,7 +306,11 @@ public class HyperPayModule extends ReactContextBaseJavaModule implements ITrans
                     result.putString("resourcePath", data.getStringExtra(CheckoutActivity.CHECKOUT_RESULT_RESOURCE_PATH));
                 }
                 if (data.hasExtra(CheckoutActivity.CHECKOUT_RESULT_TRANSACTION)) {
-                    result.putString("transactionId", data.getStringExtra(CheckoutActivity.CHECKOUT_RESULT_TRANSACTION));
+                    Transaction transaction = data.getParcelableExtra(CheckoutActivity.CHECKOUT_RESULT_TRANSACTION);
+                    if (transaction != null && transaction.getPaymentParams() != null) {
+                        result.putString("transactionId", transaction.getPaymentParams().getCheckoutId());
+                        result.putString("status", transaction.getTransactionType() == TransactionType.SYNC ? "completed" : "pending");
+                    }
                 }
                 if (data.hasExtra(CheckoutActivity.EXTRA_CHECKOUT_ID)) {
                     result.putString("checkoutId", data.getStringExtra(CheckoutActivity.EXTRA_CHECKOUT_ID));
