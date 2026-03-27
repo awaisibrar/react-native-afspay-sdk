@@ -102,6 +102,79 @@ RCT_EXPORT_METHOD(createPaymentTransaction: (NSDictionary*)options resolver:(RCT
 
 
 
+RCT_EXPORT_METHOD(registerCard:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSError *error;
+  OPPCardPaymentParams *params = [OPPCardPaymentParams cardPaymentParamsWithCheckoutID:[options valueForKey:@"checkoutID"]
+                                                                          paymentBrand:[options valueForKey:@"paymentBrand"]
+                                                                                holder:[options valueForKey:@"holderName"]
+                                                                                number:[options valueForKey:@"cardNumber"]
+                                                                           expiryMonth:[options valueForKey:@"expiryMonth"]
+                                                                            expiryYear:[options valueForKey:@"expiryYear"]
+                                                                                   CVV:[options valueForKey:@"cvv"]
+                                                                                 error:&error];
+  if (error) {
+    reject(@"registerCard", error.localizedDescription, error);
+    return;
+  }
+
+  if ([options valueForKey:@"shopperResultURL"])
+    params.shopperResultURL = [options valueForKey:@"shopperResultURL"];
+  else
+    params.shopperResultURL = shopperResultURL;
+
+  OPPTransaction *transaction = [OPPTransaction transactionWithPaymentParams:params];
+  [provider registerTransaction:transaction completionHandler:^(OPPTransaction * _Nonnull transaction, NSError * _Nullable error) {
+    if (error) {
+      reject(@"registerCard", error.localizedDescription, error);
+    } else {
+      resolve(@{
+        @"status": @"completed",
+        @"checkoutId": transaction.paymentParams.checkoutID
+      });
+    }
+  }];
+}
+
+
+RCT_EXPORT_METHOD(payWithToken:(NSDictionary*)options resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSError *error;
+  OPPTokenPaymentParams *params = [OPPTokenPaymentParams tokenPaymentParamsWithCheckoutID:[options valueForKey:@"checkoutID"]
+                                                                                  tokenID:[options valueForKey:@"tokenID"]
+                                                                             paymentBrand:[options valueForKey:@"paymentBrand"]
+                                                                                    error:&error];
+  if (error) {
+    reject(@"payWithToken", error.localizedDescription, error);
+    return;
+  }
+
+  // if ([options valueForKey:@"cvv"])
+  //   params.cvv = [options valueForKey:@"cvv"];
+
+  if ([options valueForKey:@"shopperResultURL"])
+    params.shopperResultURL = [options valueForKey:@"shopperResultURL"];
+  else
+    params.shopperResultURL = shopperResultURL;
+
+  OPPTransaction *transaction = [OPPTransaction transactionWithPaymentParams:params];
+  [provider submitTransaction:transaction completionHandler:^(OPPTransaction * _Nonnull transaction, NSError * _Nullable error) {
+    if (transaction.type == OPPTransactionTypeAsynchronous) {
+      resolve(@{
+        @"redirectURL": transaction.redirectURL.absoluteString,
+        @"status": @"pending",
+        @"checkoutId": transaction.paymentParams.checkoutID
+      });
+    } else if (transaction.type == OPPTransactionTypeSynchronous) {
+      resolve(@{
+        @"status": @"completed",
+        @"checkoutId": transaction.paymentParams.checkoutID
+      });
+    } else {
+      reject(@"payWithToken", error.localizedDescription, error);
+    }
+  }];
+}
+
+
 RCT_EXPORT_METHOD(applePay:(NSDictionary*)params resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject){
   
   OPPCheckoutSettings *checkoutSettings = [[OPPCheckoutSettings alloc] init];

@@ -163,9 +163,6 @@ public class HyperPayModule extends ReactContextBaseJavaModule implements ITrans
 
             TokenPaymentParams tokenParams = new TokenPaymentParams(checkoutID, tokenID, paymentBrand);
 
-            // if (params.hasKey("cvv") && params.getString("cvv") != null) {
-            //     tokenParams.setCvv(params.getString("cvv"));
-            // }
             if (params.hasKey("shopperResultURL")) {
                 shopperResultURL = params.getString("shopperResultURL");
             }
