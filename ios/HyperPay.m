@@ -226,20 +226,17 @@ RCT_EXPORT_METHOD(googlePay:(NSDictionary*)params resolver:(RCTPromiseResolveBlo
 
 - (void)onThreeDSChallengeRequiredWithCompletion:(void (^)(UINavigationController * _Nonnull))completion {
   dispatch_async(dispatch_get_main_queue(), ^{
-    UIViewController *rootVC = [UIApplication sharedApplication].keyWindow.rootViewController;
-    // Walk down to the topmost presented controller
+    
+    UIWindow *window = UIApplication.sharedApplication.windows.firstObject;
+    UIViewController *rootVC = window.rootViewController;
+
+    // Get top-most presented VC
     while (rootVC.presentedViewController) {
       rootVC = rootVC.presentedViewController;
     }
-    UINavigationController *navController;
-    if ([rootVC isKindOfClass:[UINavigationController class]]) {
-      navController = (UINavigationController *)rootVC;
-    } else if (rootVC.navigationController) {
-      navController = rootVC.navigationController;
-    } else {
-      navController = [[UINavigationController alloc] initWithRootViewController:rootVC];
-    }
-    completion(navController);
+
+    // 🚨 This is the correct approach for Expo
+    completion((UINavigationController *)rootVC);
   });
 }
 
