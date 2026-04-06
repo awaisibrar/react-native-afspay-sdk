@@ -1,5 +1,6 @@
 
 #import <Foundation/Foundation.h>
+#import <PassKit/PassKit.h>
 #import "HyperPay.h"
 #import <React/RCTLog.h>
 
@@ -176,17 +177,38 @@ RCT_EXPORT_METHOD(payWithToken:(NSDictionary*)options resolver:(RCTPromiseResolv
 
 
 RCT_EXPORT_METHOD(applePay:(NSDictionary*)params resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject){
-  
+
+  if (merchantIdentifier.length == 0 || countryCode.length == 0) {
+    reject(@"applePay", @"HyperPay is not configured (missing merchantIdentifier or countryCode). Call init() before applePay.", nil);
+    return;
+  }
+
   OPPCheckoutSettings *checkoutSettings = [[OPPCheckoutSettings alloc] init];
   PKPaymentRequest *paymentRequest = [OPPPaymentProvider paymentRequestWithMerchantIdentifier:merchantIdentifier countryCode:countryCode];
-  paymentRequest.supportedNetworks = supportedNetworks;
-  
+
+  // Must match com.apple.developer.in-app-payments in the signed app (see Apple PKPaymentRequest docs).
+  paymentRequest.merchantIdentifier = merchantIdentifier;
+  paymentRequest.merchantCapabilities = PKMerchantCapability3DS | PKMerchantCapabilityDebit | PKMerchantCapabilityCredit;
+
+  // RN passes JS strings like "Visa" / "MasterCard" but PKPaymentNetwork values are fixed constants (e.g. PKPaymentNetworkVisa).
+  // Assigning mismatched strings makes PassKit treat Apple Pay as unavailable.
+  paymentRequest.supportedNetworks = @[
+    PKPaymentNetworkVisa,
+    PKPaymentNetworkMasterCard,
+    PKPaymentNetworkAmex
+  ];
+
+  // Ensure currency matches the checkout (UAE flows use AED).
+  if (paymentRequest.currencyCode.length == 0) {
+    paymentRequest.currencyCode = @"AED";
+  }
 
     if ([params valueForKey:@"companyName"]){
         companyName=[params valueForKey:@"companyName"];
        }
         NSDecimalNumber *amount = [NSDecimalNumber decimalNumberWithMantissa:[[params valueForKey:@"amount"] intValue] exponent:-2 isNegative:NO];
-        paymentRequest.paymentSummaryItems = @[[PKPaymentSummaryItem summaryItemWithLabel:companyName amount:amount]];
+        NSString *summaryLabel = (companyName.length > 0) ? companyName : @"myAlfred";
+        paymentRequest.paymentSummaryItems = @[[PKPaymentSummaryItem summaryItemWithLabel:summaryLabel amount:amount]];
  
     
   checkoutSettings.shopperResultURL=shopperResultURL;
@@ -205,11 +227,31 @@ RCT_EXPORT_METHOD(applePay:(NSDictionary*)params resolver:(RCTPromiseResolveBloc
 //          reject(@"applePay",checkoutID,error);
         reject(@"applePay",error.localizedDescription, error);
           // See code attribute (OPPErrorCode) and NSLocalizedDescription to identify the reason of failure.
+      } else if (!transaction) {
+        reject(@"applePay", @"Transaction completed without result", nil);
       } else {
-          if (transaction.redirectURL)
-              resolve(@{@"redirectURL": transaction.redirectURL.absoluteString});
-          else
-              resolve(@{@"resourcePath": transaction.resourcePath});
+          // Match Android `googlePay` activity result: checkoutId, transactionId, status, resourcePath (+ redirectURL when async).
+          NSMutableDictionary *result = [NSMutableDictionary dictionary];
+          NSString *checkoutId = transaction.paymentParams.checkoutID;
+          if (checkoutId.length == 0) {
+            checkoutId = [params valueForKey:@"checkoutID"];
+          }
+          if (checkoutId.length > 0) {
+            result[@"checkoutId"] = checkoutId;
+            result[@"transactionId"] = checkoutId;
+          }
+          if (transaction.type == OPPTransactionTypeSynchronous) {
+            result[@"status"] = @"completed";
+          } else {
+            result[@"status"] = @"pending";
+          }
+          if (transaction.redirectURL) {
+            result[@"redirectURL"] = transaction.redirectURL.absoluteString;
+          }
+          if (transaction.resourcePath) {
+            result[@"resourcePath"] = transaction.resourcePath;
+          }
+          resolve(result);
       }
   } cancelHandler:^{
        reject(@"applePay",@"cancel",NULL);
